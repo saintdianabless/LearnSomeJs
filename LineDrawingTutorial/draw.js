@@ -26,36 +26,33 @@ function lerpPoint(P, Q, t) {
     };
 }
 
+function set(id, fmt, lo, hi, t) {
+    d3.select(id).text(d3.format(fmt)(lerp(lo, hi, t)));
+}
+
 class Diagram {
     constructor(containerId) {
         this.A = { x: 2, y: 2 };
         this.B = { x: 20, y: 8 };
-        this.t = 0.3;
         this.root = d3.select(`#${containerId}`);
         this.parent = d3.select(`#${containerId} svg`);
-        this.gGrid = this.parent.append('g');  // 背景层
-        this.gPoints = this.parent.append('g');  // 路径层
-        this.gHandles = this.parent.append('g');  // 交互层
-        this.gTrack = this.parent.append('line')
-            .attr('fill', 'none')
-            .attr('stroke', 'gray')
-            .attr('stroke-width', 3);
-        this.gInterpolate = this.parent.append('circle')
-            .attr('fill', interpolatePointColor)
-            .attr('r', 5);
 
-        this.drawGrid();
-        this.makeDraggableCicle(this.A);
-        this.makeDraggableCicle(this.B);
+        this._updateFunctions = []
 
         this.makeScrubableNumber('t', 0.0, 1.0, 2);
         this.update();
     }
 
-    drawGrid() {
+    OnUpdate(f) {
+        this._updateFunctions.push(f);
+        this.update();
+    }
+
+    addGrid() {
+        let g = this.parent.append('g');
         for (let x = 0; x < 25; x++) {
             for (let y = 0; y < 10; y++) {
-                this.gGrid.append('rect')
+                g.append('rect')
                     .attr('transform', `translate(${x * scale}, ${y * scale})`)
                     .attr('width', scale)
                     .attr('height', scale)
@@ -63,46 +60,83 @@ class Diagram {
                     .attr('stroke', 'gray');
             }
         }
+
+        return this;
+    }
+
+    addPathPoints() {
+        let g = this.parent.append('g');
+        this.OnUpdate(() => {
+            let rects = g.selectAll('rect')
+                .data(pointsOnLine(this.A, this.B));
+            rects.exit().remove();
+            rects.enter().append('rect')
+                .attr('width', scale - 2)
+                .attr('height', scale - 2)
+                .attr('fill', pathPointColor)
+                .merge(rects)
+                .attr('transform',
+                    p => `translate(${p.x * scale + 1} ${p.y * scale + 1})`);
+        });
+
+        return this;
+    }
+
+    addHandles() {
+        let g = this.parent.append('g');
+        this.makeDraggableCicle(g, this.A);
+        this.makeDraggableCicle(g, this.B);
+
+        return this;
+    }
+
+    addTrack() {
+        let g = this.parent.append('g');
+        let line = g.append('line')
+            .attr('fill', 'none')
+            .attr('stroke', 'gray')
+            .attr('stroke-width', 3);
+        this.OnUpdate(() => {
+            line.attr('x1', (this.A.x + 0.5) * scale)
+                .attr('y1', (this.A.y + 0.5) * scale)
+                .attr('x2', (this.B.x + 0.5) * scale)
+                .attr('y2', (this.B.y + 0.5) * scale);
+        });
+
+        return this;
+    }
+
+    addInterploated() {
+        let g = this.parent.append('g');
+        let p = g.append('circle')
+            .attr('fill', interpolatePointColor)
+            .attr('r', 5);
+        this.OnUpdate(() => {
+            let pos = lerpPoint(this.A, this.B, this.t);
+            p.attr('cx', (pos.x + 0.5) * scale)
+                .attr('cy', (pos.y + 0.5) * scale);
+        });
+
+        return this;
+    }
+
+    addScrubableNumber(name, precision, label_id, lo, hi) {
+        this[name] = 0.3;
+        this.makeScrubableNumber(name, 0, 1, precision);
+        this.OnUpdate(() => {
+            set(label_id, ".2f", lo, hi, this[name]);
+        });
+
+        return this;
     }
 
     update() {
-        let rects = this.gPoints.selectAll('rect')
-            .data(pointsOnLine(this.A, this.B));
-        rects.exit().remove();
-        rects.enter().append('rect')
-            .attr('width', scale - 2)
-            .attr('height', scale - 2)
-            .attr('fill', pathPointColor)
-            .merge(rects)
-            .attr('transform',
-                p => `translate(${p.x * scale + 1} ${p.y * scale + 1})`);
-
-        let t = this.t;
-        function set(id, fmt, lo, hi) {
-            d3.select(id).text(d3.format(fmt)(lerp(lo, hi, t)));
-        }
-        set("#lerp1", ".2f", 0, 1);
-
-        this.updateTrack();
-        this.updateInterpolated();
+        this._updateFunctions.forEach(f => f());
     }
 
-    updateTrack() {
-        this.gTrack.attr('x1', (this.A.x + 0.5) * scale)
-            .attr('y1', (this.A.y + 0.5) * scale)
-            .attr('x2', (this.B.x + 0.5) * scale)
-            .attr('y2', (this.B.y + 0.5) * scale);
-    }
-
-    updateInterpolated() {
-        let pos = lerpPoint(this.A, this.B, this.t);
-        this.gInterpolate.attr('cx', (pos.x + 0.5) * scale)
-            .attr('cy', (pos.y + 0.5) * scale);
-    }
-
-    makeDraggableCicle(point) {
+    makeDraggableCicle(g, point) {
         let diagram = this;
-        let circle = this.gHandles.append('circle')
+        let circle = g.append('circle')
             .attr('class', 'draggable')
             .attr('r', scale * 0.75)
             .attr('fill', 'hsl(0,50%,50%)')
@@ -151,4 +185,11 @@ class Diagram {
     }
 }
 
-let d = new Diagram('demo');
+let d = new Diagram('demo')
+    .addGrid()
+    .addPathPoints()
+    .addTrack()
+    .addScrubableNumber('t', 2, '#lerp1', 0, 1)
+    .addScrubableNumber('t2', 2, '#lerp2', 20, 80)
+    .addInterploated()
+    .addHandles();
