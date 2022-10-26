@@ -38,8 +38,7 @@ class Diagram {
         this.parent = d3.select(`#${containerId} svg`);
 
         this._updateFunctions = []
-
-        this.makeScrubableNumber('t', 0.0, 1.0, 2);
+        
         this.update();
     }
 
@@ -106,7 +105,7 @@ class Diagram {
         return this;
     }
 
-    addInterploated() {
+    addInterploation() {
         let g = this.parent.append('g');
         let p = g.append('circle')
             .attr('fill', interpolatePointColor)
@@ -191,5 +190,5 @@ let d = new Diagram('demo')
     .addTrack()
     .addScrubableNumber('t', 2, '#lerp1', 0, 1)
     .addScrubableNumber('t2', 2, '#lerp2', 20, 80)
-    .addInterploated()
+    .addInterploation()
     .addHandles();
