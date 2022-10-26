@@ -26,6 +26,14 @@ function lerpPoint(P, Q, t) {
     };
 }
 
+function interpolationPoints(P, Q, N) {
+    let points = [];
+    for (let i = 0; i <= N; i++) {
+        points.push(lerpPoint(P, Q, i / N));
+    }
+    return points;
+}
+
 function set(id, fmt, lo, hi, t) {
     d3.select(id).text(d3.format(fmt)(lerp(lo, hi, t)));
 }
@@ -38,7 +46,7 @@ class Diagram {
         this.parent = d3.select(`#${containerId} svg`);
 
         this._updateFunctions = []
-        
+
         this.update();
     }
 
@@ -105,13 +113,24 @@ class Diagram {
         return this;
     }
 
-    addInterploation() {
+    addScrubableNumber(name, precision, label_id, lo, hi) {
+        this[name] = 0.3;
+        this.makeScrubableNumber(name, 0, 1, precision);
+        this.OnUpdate(() => {
+            set(label_id, ".2f", lo, hi, this[name]);
+        });
+
+        return this;
+    }
+
+    // 配合makeScrubableNumber使用，id应与其name一致
+    addInterploation(id) {
         let g = this.parent.append('g');
         let p = g.append('circle')
             .attr('fill', interpolatePointColor)
             .attr('r', 5);
         this.OnUpdate(() => {
-            let pos = lerpPoint(this.A, this.B, this.t);
+            let pos = lerpPoint(this.A, this.B, this[id]);
             p.attr('cx', (pos.x + 0.5) * scale)
                 .attr('cy', (pos.y + 0.5) * scale);
         });
@@ -119,11 +138,21 @@ class Diagram {
         return this;
     }
 
-    addScrubableNumber(name, precision, label_id, lo, hi) {
-        this[name] = 0.3;
-        this.makeScrubableNumber(name, 0, 1, precision);
+    // 配合addScrubableNumber使用，id应与其name一致
+    // 这里需要lo hi，待优化
+    addInterploations(id, lo, hi) {
+        let g = this.parent.append('g');
         this.OnUpdate(() => {
-            set(label_id, ".2f", lo, hi, this[name]);
+            let N = Math.floor(lo + (hi - lo) * this[id]);
+            let points = interpolationPoints(this.A, this.B, N);
+            let circles = g.selectAll("circle").data(points);
+            circles.exit().remove();
+            circles.enter().append('circle')
+                .attr('fill', interpolatePointColor)
+                .attr('r', 5)
+                .merge(circles)
+                .attr('transform',
+                    (p) => `translate(${(p.x + 0.5) * scale}, ${(p.y + 0.5) * scale})`);
         });
 
         return this;
@@ -189,6 +218,7 @@ let d = new Diagram('demo')
     .addPathPoints()
     .addTrack()
     .addScrubableNumber('t', 2, '#lerp1', 0, 1)
-    .addScrubableNumber('t2', 2, '#lerp2', 20, 80)
-    .addInterploation()
+    // .addInterploation('t')
+    .addScrubableNumber('t2', 2, '#lerp2', 5, 80)
+    .addInterploations('t2', 5, 80)
     .addHandles();
