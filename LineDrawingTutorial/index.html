@@ -6,11 +6,29 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualize</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        span[data-name] {
+            cursor: col-resize;
+            font-weight: bold;
+            border-bottom: 2px dotted #a44;
+        }
+    </style>
 </head>
 
 <body>
     <div id="demo">
         <svg viewBox="0 0 550 220" style="background: white"></svg>
+        <div>
+            <div id="linear-interpolation">
+                <pre>
+          lerp(  0,   1, <span data-name="t"></span>) = <span id="lerp1"></span>
+                </pre>
+            </div>
+        </div>
     </div>
     <script src="./d3.js"></script>
     <script src="./draw.js"></script>
