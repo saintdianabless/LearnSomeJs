@@ -1,5 +1,6 @@
 const endPointColor = 'hsl(0,50%,50%)';
 const pathPointColor = 'hsl(0,40%,70%)';
+const interpolatePointColor = 'hsl(0,30%,50%)';
 const scale = 22;
 
 function pointsOnLine(P, Q) {
@@ -18,6 +19,13 @@ function lerp(start, end, t) {
     return start + t * (end - start);
 }
 
+function lerpPoint(P, Q, t) {
+    return {
+        x: lerp(P.x, Q.x, t),
+        y: lerp(P.y, Q.y, t)
+    };
+}
+
 class Diagram {
     constructor(containerId) {
         this.A = { x: 2, y: 2 };
@@ -28,6 +36,13 @@ class Diagram {
         this.gGrid = this.parent.append('g');  // 背景层
         this.gPoints = this.parent.append('g');  // 路径层
         this.gHandles = this.parent.append('g');  // 交互层
+        this.gTrack = this.parent.append('line')
+            .attr('fill', 'none')
+            .attr('stroke', 'gray')
+            .attr('stroke-width', 3);
+        this.gInterpolate = this.parent.append('circle')
+            .attr('fill', interpolatePointColor)
+            .attr('r', 5);
 
         this.drawGrid();
         this.makeDraggableCicle(this.A);
@@ -67,6 +82,22 @@ class Diagram {
             d3.select(id).text(d3.format(fmt)(lerp(lo, hi, t)));
         }
         set("#lerp1", ".2f", 0, 1);
+
+        this.updateTrack();
+        this.updateInterpolated();
+    }
+
+    updateTrack() {
+        this.gTrack.attr('x1', (this.A.x + 0.5) * scale)
+            .attr('y1', (this.A.y + 0.5) * scale)
+            .attr('x2', (this.B.x + 0.5) * scale)
+            .attr('y2', (this.B.y + 0.5) * scale);
+    }
+
+    updateInterpolated() {
+        let pos = lerpPoint(this.A, this.B, this.t);
+        this.gInterpolate.attr('cx', (pos.x + 0.5) * scale)
+            .attr('cy', (pos.y + 0.5) * scale);
     }
 
     makeDraggableCicle(point) {
