@@ -6,6 +6,9 @@ const scale = 22;
 function pointsOnLine(P, Q) {
     let points = [];
     let N = Math.max(Math.abs(P.x - Q.x), Math.abs(P.y - Q.y));
+    if(N == 0) {
+        return [];
+    }
     for (let i = 0; i <= N; i++) {
         let rat = i / N;
         let x = Math.round(P.x + (Q.x - P.x) * rat);
