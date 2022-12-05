@@ -82,7 +82,9 @@ class Client {
     server: Server | null = null;
 
     id: number = 0;
+
     lag: number = 0;
+    prediction: boolean = false;
 
     move_left = false;
     move_right = false;
@@ -158,6 +160,10 @@ class Client {
             return;
         }
         this.server?.network.Send(this.lag, input);
+
+        if(this.prediction) {
+            this.entities[this.id].ApplyInput(input);
+        }
     }
 }
 
@@ -281,6 +287,9 @@ function update_parameter() {
 function update_parameter_for(client: Client, prefix: string) {
     client.lag = get_number_from_input(client.lag, prefix + '_lag');
     // console.log(prefix + ' lag: ' + client.lag);
+    let prediction = document.getElementById(prefix + '_prediction') as HTMLInputElement;
+    client.prediction = prediction.checked;
+    console.log(prefix + client.prediction);
 }
 
 function update_parameter_for_server() {

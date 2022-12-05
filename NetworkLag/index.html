@@ -14,8 +14,10 @@
     <div>
         <div style="margin-bottom: 5px;">
             Player 1
-            <label for="name">Lag:</label>
+            <label for="player1_lag">Lag:</label>
             <input type="text" id="player1_lag" name="lag" required size="10" onchange="update_parameter()">ms
+            <label for="player1_prediction">Prediction</label>
+            <input type="checkbox" name="prediction" id="player1_prediction" onchange="update_parameter()">
         </div>
 
         <canvas id="player1" width="800"></canvas>
@@ -24,7 +26,8 @@
         <div style="margin-bottom: 5px;">
             Server
             <label for="name">Update Rate:</label>
-            <input type="text" id="server_update_rate" name="update_rate" required size="10" onchange="update_parameter()">
+            <input type="text" id="server_update_rate" name="update_rate" required size="10"
+                onchange="update_parameter()">
             times per second
         </div>
 
@@ -35,6 +38,8 @@
             Player 2
             <label for="name">Lag:</label>
             <input type="text" id="player2_lag" name="lag" required size="10" onchange="update_parameter()">ms
+            <label for="player2_prediction">Prediction</label>
+            <input type="checkbox" name="prediction" id="player2_prediction" onchange="update_parameter()">
         </div>
 
         <canvas id="player2" width="800"></canvas>

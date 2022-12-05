@@ -75,6 +75,7 @@ class Client {
         this.server = null;
         this.id = 0;
         this.lag = 0;
+        this.prediction = false;
         this.move_left = false;
         this.move_right = false;
         this.last_key_time = 0;
@@ -137,6 +138,9 @@ class Client {
             return;
         }
         (_a = this.server) === null || _a === void 0 ? void 0 : _a.network.Send(this.lag, input);
+        if (this.prediction) {
+            this.entities[this.id].ApplyInput(input);
+        }
     }
 }
 class Server {
@@ -235,6 +239,9 @@ function update_parameter() {
 function update_parameter_for(client, prefix) {
     client.lag = get_number_from_input(client.lag, prefix + '_lag');
     // console.log(prefix + ' lag: ' + client.lag);
+    let prediction = document.getElementById(prefix + '_prediction');
+    client.prediction = prediction.checked;
+    console.log(prefix + client.prediction);
 }
 function update_parameter_for_server() {
     server.SetUpdateRate(get_number_from_input(server.update_rate, 'server_update_rate'));
