@@ -246,10 +246,7 @@ class Server {
     }
 }
 
-let server_fps = 4;
-
 let server = new Server();
-server.SetUpdateRate(server_fps);
 
 let client1 = new Client("player1");
 client1.lag = 150;
@@ -268,9 +265,36 @@ function handleInput(e: KeyboardEvent) {
     } else if (e.code == "KeyD") {
         client2.move_right = (e.type == "keydown");
     } else {
-        console.log(e);
+        // console.log(e);
     }
 }
 
 document.body.onkeydown = handleInput;
 document.body.onkeyup = handleInput;
+
+function update_parameter() {
+    update_parameter_for(client1, "player1");
+    update_parameter_for(client2, "player2");
+    update_parameter_for_server();
+}
+
+function update_parameter_for(client: Client, prefix: string) {
+    client.lag = get_number_from_input(client.lag, prefix + '_lag');
+    // console.log(prefix + ' lag: ' + client.lag);
+}
+
+function update_parameter_for_server() {
+    server.SetUpdateRate(get_number_from_input(server.update_rate, 'server_update_rate'));
+}
+
+function get_number_from_input(old_value: number, element_id: string): number {
+    let element = document.getElementById(element_id) as HTMLInputElement;
+    let new_value = parseInt(element.value);
+    if (isNaN(new_value)) {
+        new_value = old_value;
+    }
+    element.value = new_value.toString();
+    return new_value;
+}
+
+update_parameter();

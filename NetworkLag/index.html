@@ -12,12 +12,31 @@
 
 <body>
     <div>
+        <div style="margin-bottom: 5px;">
+            Player 1
+            <label for="name">Lag:</label>
+            <input type="text" id="player1_lag" name="lag" required size="10" onchange="update_parameter()">ms
+        </div>
+
         <canvas id="player1" width="800"></canvas>
     </div>
     <div>
+        <div style="margin-bottom: 5px;">
+            Server
+            <label for="name">Update Rate:</label>
+            <input type="text" id="server_update_rate" name="update_rate" required size="10" onchange="update_parameter()">
+            times per second
+        </div>
+
         <canvas id="server" width="800"></canvas>
     </div>
     <div>
+        <div style="margin-bottom: 5px;">
+            Player 2
+            <label for="name">Lag:</label>
+            <input type="text" id="player2_lag" name="lag" required size="10" onchange="update_parameter()">ms
+        </div>
+
         <canvas id="player2" width="800"></canvas>
     </div>
 
