@@ -85,10 +85,13 @@ class Client {
 
     lag: number = 0;
     prediction: boolean = false;
+    reconciliation: boolean = false;
 
     move_left = false;
     move_right = false;
     last_key_time = 0;
+
+    pending_verified: ClientInput[] = [];
     input_seq_num = 0;
 
     interval_id: number | null = null;
@@ -135,7 +138,23 @@ class Client {
                 let entity = this.entities[state.entity_id]!;
 
                 if (entity.entity_id == this.id) {
+                    // in sync with authoritative state
                     entity.x = state.position;
+
+                    if (this.reconciliation) {
+                        let j = 0;
+                        while (j < this.pending_verified.length) {
+                            let input = this.pending_verified[j];
+                            if (input.seq_num <= state.last_processed_input) {
+                                this.pending_verified.splice(j, 1);
+                            } else {
+                                entity.ApplyInput(input);
+                                j++;
+                            }
+                        }
+                    } else {
+                        this.pending_verified = [];
+                    }
                 } else {
                     entity.x = state.position;
                 }
@@ -161,9 +180,10 @@ class Client {
         }
         this.server?.network.Send(this.lag, input);
 
-        if(this.prediction) {
+        if (this.prediction) {
             this.entities[this.id].ApplyInput(input);
         }
+        this.pending_verified.push(input);
     }
 }
 
@@ -241,7 +261,7 @@ class Server {
                 {
                     entity_id: entity.entity_id,
                     position: entity.x,
-                    last_processed_input: null,
+                    last_processed_input: this.last_processed_input[i],
                 }
             );
         }
@@ -289,7 +309,10 @@ function update_parameter_for(client: Client, prefix: string) {
     // console.log(prefix + ' lag: ' + client.lag);
     let prediction = document.getElementById(prefix + '_prediction') as HTMLInputElement;
     client.prediction = prediction.checked;
-    console.log(prefix + client.prediction);
+    // console.log(prefix + client.prediction);
+    let reconciliation = document.getElementById(prefix + '_reconciliation') as HTMLInputElement;
+    client.reconciliation = reconciliation.checked;
+    // console.log(prefix + client.reconciliation);
 }
 
 function update_parameter_for_server() {

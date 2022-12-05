@@ -76,9 +76,11 @@ class Client {
         this.id = 0;
         this.lag = 0;
         this.prediction = false;
+        this.reconciliation = false;
         this.move_left = false;
         this.move_right = false;
         this.last_key_time = 0;
+        this.pending_verified = [];
         this.input_seq_num = 0;
         this.interval_id = null;
         this.canvas = document.getElementById(id);
@@ -111,7 +113,24 @@ class Client {
                 }
                 let entity = this.entities[state.entity_id];
                 if (entity.entity_id == this.id) {
+                    // in sync with authoritative state
                     entity.x = state.position;
+                    if (this.reconciliation) {
+                        let j = 0;
+                        while (j < this.pending_verified.length) {
+                            let input = this.pending_verified[j];
+                            if (input.seq_num <= state.last_processed_input) {
+                                this.pending_verified.splice(j, 1);
+                            }
+                            else {
+                                entity.ApplyInput(input);
+                                j++;
+                            }
+                        }
+                    }
+                    else {
+                        this.pending_verified = [];
+                    }
                 }
                 else {
                     entity.x = state.position;
@@ -141,6 +160,7 @@ class Client {
         if (this.prediction) {
             this.entities[this.id].ApplyInput(input);
         }
+        this.pending_verified.push(input);
     }
 }
 class Server {
@@ -197,7 +217,7 @@ class Server {
             state.push({
                 entity_id: entity.entity_id,
                 position: entity.x,
-                last_processed_input: null,
+                last_processed_input: this.last_processed_input[i],
             });
         }
         for (const client of this.clients) {
@@ -241,7 +261,10 @@ function update_parameter_for(client, prefix) {
     // console.log(prefix + ' lag: ' + client.lag);
     let prediction = document.getElementById(prefix + '_prediction');
     client.prediction = prediction.checked;
-    console.log(prefix + client.prediction);
+    // console.log(prefix + client.prediction);
+    let reconciliation = document.getElementById(prefix + '_reconciliation');
+    client.reconciliation = reconciliation.checked;
+    // console.log(prefix + client.reconciliation);
 }
 function update_parameter_for_server() {
     server.SetUpdateRate(get_number_from_input(server.update_rate, 'server_update_rate'));
